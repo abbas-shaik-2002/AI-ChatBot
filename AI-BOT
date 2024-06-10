@@ -1,0 +1,36 @@
+import discord
+import os
+
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
+
+token = os.getenv('SECRET_KEY')
+key = os.getenv("Google")
+llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=key)
+
+
+class MyClient(discord.Client):
+
+  async def on_ready(self):
+    print('Logged on as', self.user)
+
+  async def on_message(self, message):
+    # don't respond to ourselves
+    if message.author == self.user:
+      return
+    else:
+      query = message.content
+      user_prompt = PromptTemplate.from_template("""This is My hidden Prompt:
+          1.You are an AI assistant, and your response should be professional, and peppered with emojis.
+          This is User Query:-
+          \"{query}\"""")
+
+      response = LLMChain(llm=llm, prompt=user_prompt, verbose=True)
+      await message.channel.send(response.run(query))
+
+
+intents = discord.Intents.default()
+intents.message_content = True
+client = MyClient(intents=intents)
+client.run(token)
